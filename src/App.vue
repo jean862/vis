@@ -17,7 +17,7 @@
     </div>
 
     <p class="subtitle">
-      💡 <b>高级多视图交互：</b> 悬停左侧网络节点，观察右侧<b>薪资榜</b>的实时联动！按住节点可垂直拖拽排版。
+      💡 <b>高级多视图交互：</b> 悬停左侧网络节点，观察右侧<b>薪资榜</b>的实时联动！按住节点可垂直拖拽排版。滚轮缩放画布。
     </p>
     
     <div class="charts-layout">
@@ -35,17 +35,17 @@
       <div class="annotation-section">
         <h4>📊 图表节点含义：</h4>
         <ul>
-          <li><b>左侧第一列（起点）：AI 相关核心职位</b> —— 当前市场上活跃的各类 AI 相关岗位（如提示词工程师、架构师等）。</li>
+          <li><b>左侧第一列（起点）：AI 核心职位</b> —— 当前市场上活跃的各类 AI 相关岗位（如提示词工程师、架构师等）。</li>
           <li><b>中间第二列（枢纽）：所属行业分布</b> —— 大量雇佣上述岗位的产业领域（如科技、金融、医疗等）。</li>
           <li><b>右侧第三列（终点）：自动化风险等级</b> —— 评估该岗位在未来几年内被下一代 AI 完全取代的概率（<span style="color:#e74c3c;font-weight:bold;">高</span> / <span style="color:#f39c12;font-weight:bold;">中</span> / <span style="color:#2ecc71;font-weight:bold;">低</span>）。</li>
         </ul>
       </div>
       <div class="annotation-section">
-        <h4>🖱️ 页面交互方式：</h4>
+        <h4>🖱️ 页面交互玩法：</h4>
         <ul>
-          <li><b>动态筛选：</b> 切换顶部下拉菜单，观察不同规模公司在人才需求和薪资上的差异。</li>
-          <li><b>数据钻取：</b> 鼠标悬停在左图的任意节点或连线上，会显示统计数据并高亮数据流向；同时右侧排行榜会瞬间重算，展示该路径下的真实薪资水平。</li>
-          <li><b>自由排版：</b> 可用鼠标按住对应节点上下拖拽，自由布局。</li>
+          <li><b>动态筛选：</b> 切换顶部下拉菜单，观察不同规模公司在人才需求和薪资上的巨大差异。数据量为0时表明需要修复路径。</li>
+          <li><b>数据钻取：</b> 鼠标悬停在左图的任意节点或连线上，右侧排行榜会瞬间重算，展示该路径下的真实薪资水平。</li>
+          <li><b>自由排版：</b> 如果左侧图表线条过于交织，可用鼠标按住对应节点上下拖拽，手动解开乱麻。滚轮缩放画布。</li>
         </ul>
       </div>
     </div>
@@ -67,12 +67,17 @@ const barChartTitle = ref("大盘全局平均薪资 Top 5");
 let cachedRawData = [];
 let globalFilteredData = [];
 
-const jobColors = d3.scaleOrdinal([...d3.schemeTableau10, ...d3.schemeSet3, ...d3.schemeDark2]);
+// 超大调色板，防止任何颜色重复
+const baseJobColors = d3.scaleOrdinal([...d3.schemeTableau10, ...d3.schemeDark2]);
 const industryColors = d3.scaleOrdinal(d3.schemeSet2);
 
+// 专门获取职位颜色的函数，包含专属拦截
 function getJobColor(jobName) {
+  // 拦截：给 Synthetic Data Engineer 分配深紫色
   if (jobName === 'Synthetic Data Engineer') return '#7e22ce'; 
-  return jobColors(jobName);
+  // 🌟 新增针对性修复：给 Machine Learning Engineer 分配全新的深森林绿色，确保白色数字绝对清晰
+  if (jobName === 'Machine Learning Engineer') return '#166534'; 
+  return baseJobColors(jobName);
 }
 
 function getNodeColor(d) {
@@ -84,17 +89,16 @@ function getNodeColor(d) {
     return '#bdc3c7';
   }
   if (d.category === 'Industry') {
+    // 拦截：给 Tech 分配科技蓝，给 Finance 分配孔雀绿
     if (d.name === 'Tech') return '#3b82f6'; 
-    // 🌟 新增：给 Finance 分配专属的深青色，彻底解决撞色
-    if (d.name === 'Finance') return '#9cc254'; 
-    if (d.name === 'Retail') return '#aeaf52'; 
+    if (d.name === 'Finance') return '#0d9488'; 
     return industryColors(d.name);
   }
-  return getJobColor(d.name);
+  return getJobColor(d.name); // 调用新函数，已包含森林绿拦截
 }
 
 onMounted(() => {
-  // ✅ 换成这行绝对路径魔法代码（注意反引号和 ${}）：
+  // 🌟 核心：使用路径魔法，动态拼合根路径与数据文件路径
   d3.csv(`${import.meta.env.BASE_URL}data/ai_job_market_2026.csv`).then(data => {
     cachedRawData = data;
     updateDashboard(); 
@@ -179,7 +183,7 @@ function drawBarChart(dataset) {
           .attr("y", d => y(d.job))
           .attr("height", y.bandwidth())
           .attr("width", 0) 
-          .attr("fill", d => getJobColor(d.job)) 
+          .attr("fill", d => getJobColor(d.job)) // 调用包含森林绿拦截的新函数
           .attr("rx", 6)
           .transition().duration(500)
           .attr("width", d => x(d.avgSalary) - x(0));
@@ -204,7 +208,7 @@ function drawBarChart(dataset) {
           .attr("y", d => y(d.job))
           .attr("height", y.bandwidth())
           .attr("width", d => x(d.avgSalary) - x(0))
-          .attr("fill", d => getJobColor(d.job)); 
+          .attr("fill", d => getJobColor(d.job)); // 同步更新颜色
           
         update.select(".bar-text").transition().duration(500)
           .attr("y", d => y(d.job) + y.bandwidth() / 2)
@@ -254,9 +258,11 @@ function drawSankey() {
     .attr("height", "100%")
     .attr("viewBox", `0 0 ${width} ${height}`)
     .attr("preserveAspectRatio", "xMidYMid meet")
-    .attr("style", "font-family: sans-serif;");
+    .attr("style", "font-family: sans-serif; cursor: grab;"); // 保留画布拖拽手势
 
   const mainGroup = svg.append("g");
+  // 保留画布缩放交互
+  svg.call(d3.zoom().scaleExtent([0.5, 3]).on("zoom", (event) => mainGroup.attr("transform", event.transform))); 
 
   const sankeyGenerator = sankey()
     .nodeId(d => d.id)
@@ -413,26 +419,28 @@ function drawSankey() {
 </script>
 
 <style>
+/* 终极居中暴力重置样式：粉碎一切 Vite 默认限制，接管整个页面 */
 html, body {
   margin: 0 !important;
   padding: 0 !important;
   width: 100% !important;
-  background-color: #f8fafc !important; 
+  background-color: #f8fafc !important; /* 统一底色消灭白边 */
   overflow-x: auto;
 }
 
 #app {
-  max-width: 100% !important; 
+  max-width: 100% !important; /* 打碎 1280px 紧箍咒 */
   padding: 0 !important;      
   margin: 0 !important;
   width: 100% !important;
-  display: block !important;  
+  display: block !important;  /* 解除可能存在的居中错位 */
 }
 
+/* 核心仪表盘容器：超宽居中 */
 .dashboard {
-  max-width: 1600px; 
-  min-width: 1200px; 
-  margin: 0 auto;    
+  max-width: 1600px; /* 超级带鱼屏最大限制到 1600px */
+  min-width: 1200px; /* 防止屏幕太小挤爆图表 */
+  margin: 0 auto;    /* 🌟 魔法属性：在超宽屏幕上绝对居中对齐 */
   padding: 30px;
   box-sizing: border-box;
 }
@@ -547,7 +555,7 @@ html, body {
   backdrop-filter: blur(12px);
 }
 
-/* 🌟 新增：底部注释说明面板的样式 */
+/* 注释面板样式：粉碎错误缩进，保留圆黑点 */
 .annotations-card {
   margin-top: 30px;
   background: white;
@@ -570,18 +578,19 @@ html, body {
   display: flex;
   align-items: center;
 }
+
 .annotation-section ul {
   margin: 0;
-  padding-left: 24px; /* 🌟 给黑圆点留出标准的物理空间 */
-  list-style-type: disc; /* 🌟 明确保留经典的黑圆点 */
+  padding-left: 24px; /* 🌟 物理空间给黑圆点 */
+  list-style-type: disc; /* 🌟 强制显示黑圆点 */
   color: #475569;
   font-size: 14px;
   line-height: 1.8;
-  text-align: left !important; /* 🌟 强制左对齐！粉碎一切导致缝隙的居中效果 */
+  text-align: left !important; /* 🌟 强制靠左，粉碎居中引起的大缝隙 */
 }
 
 .annotation-section li {
   margin-bottom: 8px;
-  text-align: left !important; /* 🌟 确保每一行文字死死靠左 */
+  text-align: left !important; /* 🌟 强制靠左 */
 }
 </style>
