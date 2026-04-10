@@ -94,7 +94,8 @@ function getNodeColor(d) {
 }
 
 onMounted(() => {
-  d3.csv("/data/ai_job_market_2026.csv").then(data => {
+  // ✅ 换成这行绝对路径魔法代码（注意反引号和 ${}）：
+  d3.csv(`${import.meta.env.BASE_URL}data/ai_job_market_2026.csv`).then(data => {
     cachedRawData = data;
     updateDashboard(); 
   }).catch(error => console.error("加载 CSV 文件出错:", error));
