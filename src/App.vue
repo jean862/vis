@@ -317,15 +317,38 @@ function drawExperienceChart() {
       exit => exit.transition().duration(300).attr("width", 0).remove()
     );
 
-  // 添加柱子上的数值
+  // 🌟 1. 先计算当前大盘总数，用于算百分比
+  const totalCount = d3.sum(expData, d => d.count);
+
+  // 🌟 2. 覆盖你原来的“添加柱子上的数值”逻辑
   expSvg.selectAll(".label")
     .data(expData, d => d.name)
     .join(
       enter => enter.append("text").attr("class", "label")
         .attr("x", x(0)).attr("y", d => y(d.name) + y.bandwidth() / 2).attr("dy", "0.35em").attr("dx", "5px")
         .attr("fill", "white").style("font-size", "12px").style("font-weight", "bold").style("pointer-events", "none")
-        .text(d => d.count).call(enter => enter.transition().duration(500).attr("x", d => x(d.count) > x(0) + 30 ? x(0) + 5 : x(d.count) + 5).attr("fill", d => x(d.count) > x(0) + 30 ? "white" : "#475569")),
-      update => update.text(d => d.count).call(update => update.transition().duration(500).attr("y", d => y(d.name) + y.bandwidth() / 2).attr("x", d => x(d.count) > x(0) + 30 ? x(0) + 5 : x(d.count) + 5).attr("fill", d => x(d.count) > x(0) + 30 ? "white" : "#475569")),
+        .text(d => {
+          // 拼接数值和百分比，例如 "1500 (30.5%)"
+          if (totalCount === 0 || d.count === 0) return ""; 
+          const percentage = ((d.count / totalCount) * 100).toFixed(1);
+          return `${d.count} (${percentage}%)`;
+        })
+        .call(enter => enter.transition().duration(500)
+          // ⚠️ 注意：因为加了百分比，文字变长了，所以我把这里判断柱子宽度的阈值从 30 改成了 80
+          .attr("x", d => x(d.count) > x(0) + 80 ? x(0) + 5 : x(d.count) + 5)
+          .attr("fill", d => x(d.count) > x(0) + 80 ? "white" : "#475569")
+        ),
+      update => update
+        .text(d => {
+          if (totalCount === 0 || d.count === 0) return ""; 
+          const percentage = ((d.count / totalCount) * 100).toFixed(1);
+          return `${d.count} (${percentage}%)`;
+        })
+        .call(update => update.transition().duration(500)
+          .attr("y", d => y(d.name) + y.bandwidth() / 2)
+          .attr("x", d => x(d.count) > x(0) + 80 ? x(0) + 5 : x(d.count) + 5)
+          .attr("fill", d => x(d.count) > x(0) + 80 ? "white" : "#475569")
+        ),
       exit => exit.remove()
     );
 
