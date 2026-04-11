@@ -28,7 +28,7 @@
       <span style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 4px 10px; border-radius: 6px; margin-right: 10px; font-weight: bold; color: #1e293b;">
         💡 流向与薪资视图交互：
       </span>
-      <span>悬停下方左侧网络节点，可观察右侧 <b>薪资榜</b> 的实时联动；按住节点可垂直拖拽排版；滚轮缩放画布</span>
+      <span>悬停下方左侧网络节点，可观察右侧 <b>薪资榜</b> 的实时联动；悬停节点或连线可查看数据统计信息；按住节点可垂直拖拽排版；滚轮缩放画布</span>
     </div>
     
     <div class="charts-layout">
@@ -66,7 +66,8 @@
       </div>
 
       <div style="color: #475569; font-size: 14px; background-color: #f8fafc; padding: 12px 16px; border-left: 4px solid #cbd5e1; border-radius: 0 6px 6px 0; margin-top: -5px; text-align: left !important;">
-         <b>数据统计说明：</b> 筛选器中的「初创公司」与「大型企业」仅为典型两极样本，不包含中型企业及未披露规模的样本，故两者之和小于全部大盘。
+         <b>数据统计说明：</b> 筛选器中的「初创公司」与「大型企业」仅为典型两极样本，不包含中型企业及未披露规模的样本，故两者之和小于全部大盘。<br>
+         <b>流向图岗位节点说明：</b>在流向图中，为了避免节点过多导致连线混乱，仅选取在大盘数据中需求数排名前 22 的岗位作为独立节点。其他频次较低的岗位被归类到 "Other Roles" 节点中。
       </div>
       
       <div style="display: flex; flex-direction: row; gap: 40px; width: 100%; margin-top: 5px;">
@@ -83,7 +84,7 @@
         <div style="flex: 1;">
           <h4 style="margin: 0 0 15px 0; color: #1e293b; font-size: 16px; text-align: left !important;"> 右侧与下方图表交互方法：</h4>
           <ul style="margin: 0; padding-left: 24px; list-style-type: disc; color: #475569; font-size: 14px; line-height: 1.8; text-align: left !important;">
-            <li style="margin-bottom: 8px;"><b>右侧薪资图表：</b> 鼠标悬停左边第一张图的任意节点或连线上，右侧薪资榜单会显示节点对应数据。</li>
+            <li style="margin-bottom: 8px;"><b>右侧薪资图表：</b> 鼠标悬停左边第一张图的任意节点上，右侧薪资榜单会显示节点对应数据。悬浮在节点或连线上可查看数据统计信息。</li>
             <li style="margin-bottom: 8px;"><b>下方经验与技能联动图：</b> 点击左下方经验柱，右侧的核心技能榜单会显示该阶段的核心技能。</li>
           </ul>
         </div>
@@ -92,7 +93,7 @@
     </div>
     <div class="project-documentation" style="margin-top: 40px; background: white; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); padding: 40px 50px; text-align: left; color: #334155; line-height: 1.8;">
       
-      <h2 style="margin-top: 0; color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px;">📝 项目说明文档</h2>
+      <h2 style="margin-top: 0; color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px;"> 项目说明文档</h2>
 
       <h3 style="color: #1e293b; margin-top: 30px;">1. 旨在解答什么问题？</h3>
       <p>
@@ -174,7 +175,7 @@ const skillsChartTitle = ref("大盘全局 Top 10 核心技能");
 // 数据缓存
 let cachedRawData = [];
 let globalFilteredData = [];
-let selectedExp = null; // 用于记录当前选中的经验层级
+let selectedExp = null;
 
 // 调色板
 const baseJobColors = d3.scaleOrdinal([...d3.schemeTableau10, ...d3.schemeDark2]);
@@ -185,6 +186,9 @@ function getJobColor(jobName) {
   if (jobName === 'Machine Learning Engineer') return '#166534'; 
   if (jobName === 'Autonomous Systems Researcher') return '#c026d3';
   if (jobName === 'Cognitive Computing Lead') return '#d584ac';
+  if (jobName === 'MLOps Engineer') return '#a37382';           // 翠绿色
+  if (jobName === 'Other Roles') return '#538879';           // 翠绿色
+  if (jobName === 'RAG Engineer') return '#dbd282';           // 翠绿色
   return baseJobColors(jobName);
 }
 
@@ -208,7 +212,6 @@ function getNodeColor(d) {
   return getJobColor(d.name);
 }
 
-// 
 function getExpLevel(row) {
   let val = row['Experience'] || row['Experience_Level'] || row['Experience Level'];
   return val ? String(val).trim() : 'Unknown';
@@ -224,7 +227,13 @@ onMounted(() => {
     updateDashboard(); 
   }).catch(error => console.error("加载 CSV 文件出错:", error));
   
-  window.addEventListener('resize', updateDashboard);
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      updateDashboard();
+    }, 150);
+  });
 });
 
 function updateDashboard() {
@@ -241,7 +250,6 @@ function updateDashboard() {
   }
   currentDataCount.value = globalFilteredData.length;
   
-  // 切换公司规模时，重置选中的经验状态
   selectedExp = null;
   skillsChartTitle.value = "大盘全局 Top 10 核心技能";
 
@@ -254,101 +262,57 @@ function updateDashboard() {
 }
 
 // ==========================================
-// 绘制下方左侧图：经验分布柱状图 (可点击)
+// 绘制下方左侧图：经验分布柱状图
 // ==========================================
 let expSvg = null;
 function drawExperienceChart() {
   const container = d3.select(expRef.value);
-  const width = container.node().getBoundingClientRect().width || 400;
+  const width = container.node().getBoundingClientRect().width || 400; 
   const height = 350;
   const margin = { top: 20, right: 30, bottom: 40, left: 100 };
 
-  // 统计经验层级
-  // 将上面这段完全替换为按“业务职级”排序的代码：
   const expCounts = d3.rollup(globalFilteredData, v => v.length, getExpLevel);
-  
-  // 定义经验等级的严格从高到低排序字典
   const expOrder = { "Executive": 1, "Senior": 2, "Mid": 3, "Entry": 4 };
-  
   let expData = Array.from(expCounts, ([name, count]) => ({name, count}))
                      .filter(d => d.name !== 'Unknown')
-                     .sort((a, b) => {
-                       const rankA = expOrder[a.name] || 99; // 找不到的放最后
-                       const rankB = expOrder[b.name] || 99;
-                       return rankA - rankB; // 排名数字小的（高级别）在最上面
-                     });
+                     .sort((a, b) => (expOrder[a.name] || 99) - (expOrder[b.name] || 99));
 
   if (!expSvg) {
     container.selectAll("*").remove();
-    expSvg = container.append("svg").attr("width", "100%").attr("height", "100%").attr("viewBox", `0 0 ${width} ${height}`);
+    expSvg = container.append("svg").attr("width", "100%").attr("height", "100%");
     expSvg.append("g").attr("class", "x-axis");
     expSvg.append("g").attr("class", "y-axis");
   }
+  expSvg.attr("viewBox", `0 0 ${width} ${height}`);
 
   const x = d3.scaleLinear().domain([0, d3.max(expData, d => d.count) || 10]).range([margin.left, width - margin.right]);
   const y = d3.scaleBand().domain(expData.map(d => d.name)).range([margin.top, height - margin.bottom]).padding(0.3);
 
-  expSvg.selectAll(".bar")
-    .data(expData, d => d.name)
+  expSvg.selectAll(".bar").data(expData, d => d.name)
     .join(
-      enter => enter.append("rect")
-        .attr("class", "bar")
-        .attr("x", x(0))
-        .attr("y", d => y(d.name))
-        .attr("height", y.bandwidth())
-        .attr("fill", "#8b5cf6") // 紫色主题
-        .attr("rx", 4)
-        .style("cursor", "pointer")
+      enter => enter.append("rect").attr("class", "bar").attr("x", x(0)).attr("y", d => y(d.name)).attr("height", y.bandwidth()).attr("fill", "#8b5cf6").attr("rx", 4).style("cursor", "pointer")
         .attr("opacity", d => selectedExp === null || selectedExp === d.name ? 1 : 0.3)
-        // 点击联动逻辑
         .on("click", function(event, d) {
-          selectedExp = selectedExp === d.name ? null : d.name; // Toggle 点击
+          selectedExp = selectedExp === d.name ? null : d.name; 
           skillsChartTitle.value = selectedExp ? `【${selectedExp}】阶段 Top 10 技能` : "大盘全局 Top 10 核心技能";
-          drawExperienceChart(); // 重绘自己以更新透明度
-          drawSkillsChart();     // 联动右侧技能图
+          drawExperienceChart(); 
+          drawSkillsChart();     
         })
         .call(enter => enter.transition().duration(500).attr("width", d => x(d.count) - x(0))),
-      update => update
-        .attr("opacity", d => selectedExp === null || selectedExp === d.name ? 1 : 0.3)
-        .call(update => update.transition().duration(500)
-          .attr("y", d => y(d.name))
-          .attr("height", y.bandwidth())
-          .attr("width", d => x(d.count) - x(0))),
+      update => update.attr("opacity", d => selectedExp === null || selectedExp === d.name ? 1 : 0.3)
+        .call(update => update.transition().duration(500).attr("y", d => y(d.name)).attr("height", y.bandwidth()).attr("width", d => x(d.count) - x(0))),
       exit => exit.transition().duration(300).attr("width", 0).remove()
     );
 
-  // 🌟 1. 先计算当前大盘总数，用于算百分比
   const totalCount = d3.sum(expData, d => d.count);
 
-  // 🌟 2. 覆盖你原来的“添加柱子上的数值”逻辑
-  expSvg.selectAll(".label")
-    .data(expData, d => d.name)
+  expSvg.selectAll(".label").data(expData, d => d.name)
     .join(
-      enter => enter.append("text").attr("class", "label")
-        .attr("x", x(0)).attr("y", d => y(d.name) + y.bandwidth() / 2).attr("dy", "0.35em").attr("dx", "5px")
-        .attr("fill", "white").style("font-size", "12px").style("font-weight", "bold").style("pointer-events", "none")
-        .text(d => {
-          // 拼接数值和百分比，例如 "1500 (30.5%)"
-          if (totalCount === 0 || d.count === 0) return ""; 
-          const percentage = ((d.count / totalCount) * 100).toFixed(1);
-          return `${d.count} (${percentage}%)`;
-        })
-        .call(enter => enter.transition().duration(500)
-          // ⚠️ 注意：因为加了百分比，文字变长了，所以我把这里判断柱子宽度的阈值从 30 改成了 80
-          .attr("x", d => x(d.count) > x(0) + 80 ? x(0) + 5 : x(d.count) + 5)
-          .attr("fill", d => x(d.count) > x(0) + 80 ? "white" : "#475569")
-        ),
-      update => update
-        .text(d => {
-          if (totalCount === 0 || d.count === 0) return ""; 
-          const percentage = ((d.count / totalCount) * 100).toFixed(1);
-          return `${d.count} (${percentage}%)`;
-        })
-        .call(update => update.transition().duration(500)
-          .attr("y", d => y(d.name) + y.bandwidth() / 2)
-          .attr("x", d => x(d.count) > x(0) + 80 ? x(0) + 5 : x(d.count) + 5)
-          .attr("fill", d => x(d.count) > x(0) + 80 ? "white" : "#475569")
-        ),
+      enter => enter.append("text").attr("class", "label").attr("x", x(0)).attr("y", d => y(d.name) + y.bandwidth() / 2).attr("dy", "0.35em").attr("dx", "5px").attr("fill", "white").style("font-size", "12px").style("font-weight", "bold").style("pointer-events", "none")
+        .text(d => totalCount === 0 || d.count === 0 ? "" : `${d.count} (${((d.count / totalCount) * 100).toFixed(1)}%)`)
+        .call(enter => enter.transition().duration(500).attr("x", d => x(d.count) > x(0) + 110 ? x(0) + 5 : x(d.count) + 5).attr("fill", d => x(d.count) > x(0) + 110 ? "white" : "#475569")),
+      update => update.text(d => totalCount === 0 || d.count === 0 ? "" : `${d.count} (${((d.count / totalCount) * 100).toFixed(1)}%)`)
+        .call(update => update.transition().duration(500).attr("y", d => y(d.name) + y.bandwidth() / 2).attr("x", d => x(d.count) > x(0) + 110 ? x(0) + 5 : x(d.count) + 5).attr("fill", d => x(d.count) > x(0) + 110 ? "white" : "#475569")),
       exit => exit.remove()
     );
 
@@ -357,7 +321,7 @@ function drawExperienceChart() {
 }
 
 // ==========================================
-// 绘制下方右侧图：核心技能排行 (接收联动)
+// 绘制下方右侧图：核心技能排行
 // ==========================================
 let skillsSvg = null;
 function drawSkillsChart() {
@@ -366,54 +330,34 @@ function drawSkillsChart() {
   const height = 350;
   const margin = { top: 20, right: 80, bottom: 40, left: 160 };
 
-  // 1. 拦截数据：如果左侧点选了经验，就只看该经验的数据
   let targetData = selectedExp ? globalFilteredData.filter(d => getExpLevel(d) === selectedExp) : globalFilteredData;
 
-  // 2. 统计技能频次
   const skillCounts = new Map();
-  targetData.forEach(row => {
-    getSkillsList(row).forEach(skill => {
-      skillCounts.set(skill, (skillCounts.get(skill) || 0) + 1);
-    });
-  });
+  targetData.forEach(row => getSkillsList(row).forEach(skill => skillCounts.set(skill, (skillCounts.get(skill) || 0) + 1)));
 
-  // 3. 排序并取 Top 10
-  let skillsData = Array.from(skillCounts, ([name, count]) => ({name, count}))
-                        .sort((a, b) => b.count - a.count)
-                        .slice(0, 10);
+  let skillsData = Array.from(skillCounts, ([name, count]) => ({name, count})).sort((a, b) => b.count - a.count).slice(0, 10);
 
   if (!skillsSvg) {
     container.selectAll("*").remove();
-    skillsSvg = container.append("svg").attr("width", "100%").attr("height", "100%").attr("viewBox", `0 0 ${width} ${height}`);
+    skillsSvg = container.append("svg").attr("width", "100%").attr("height", "100%");
     skillsSvg.append("g").attr("class", "x-axis");
     skillsSvg.append("g").attr("class", "y-axis");
   }
+  skillsSvg.attr("viewBox", `0 0 ${width} ${height}`);
 
   const x = d3.scaleLinear().domain([0, d3.max(skillsData, d => d.count) || 10]).range([margin.left, width - margin.right]);
   const y = d3.scaleBand().domain(skillsData.map(d => d.name)).range([margin.top, height - margin.bottom]).padding(0.2);
 
-  skillsSvg.selectAll(".skill-bar")
-    .data(skillsData, d => d.name)
+  skillsSvg.selectAll(".skill-bar").data(skillsData, d => d.name)
     .join(
-      enter => enter.append("rect")
-        .attr("class", "skill-bar")
-        .attr("x", x(0)).attr("y", d => y(d.name)).attr("height", y.bandwidth())
-        .attr("fill", "#0ea4e97e") // 科技蓝色
-        .attr("rx", 4)
-        .call(enter => enter.transition().duration(500).attr("width", d => x(d.count) - x(0))),
-      update => update.call(update => update.transition().duration(500)
-        .attr("y", d => y(d.name)).attr("height", y.bandwidth()).attr("width", d => x(d.count) - x(0))),
+      enter => enter.append("rect").attr("class", "skill-bar").attr("x", x(0)).attr("y", d => y(d.name)).attr("height", y.bandwidth()).attr("fill", "#0ea4e97e").attr("rx", 4).call(enter => enter.transition().duration(500).attr("width", d => x(d.count) - x(0))),
+      update => update.call(update => update.transition().duration(500).attr("y", d => y(d.name)).attr("height", y.bandwidth()).attr("width", d => x(d.count) - x(0))),
       exit => exit.transition().duration(300).attr("width", 0).remove()
     );
 
-  // 技能条上的文字
-  skillsSvg.selectAll(".skill-label")
-    .data(skillsData, d => d.name)
+  skillsSvg.selectAll(".skill-label").data(skillsData, d => d.name)
     .join(
-      enter => enter.append("text").attr("class", "skill-label")
-        .attr("x", d => x(d.count) + 8).attr("y", d => y(d.name) + y.bandwidth() / 2).attr("dy", "0.35em")
-        .attr("fill", "#0284c7").style("font-size", "12px").style("font-weight", "bold")
-        .text(d => `${d.count} 岗`).style("opacity", 0).call(enter => enter.transition().duration(500).style("opacity", 1).attr("x", d => x(d.count) + 8)),
+      enter => enter.append("text").attr("class", "skill-label").attr("x", d => x(d.count) + 8).attr("y", d => y(d.name) + y.bandwidth() / 2).attr("dy", "0.35em").attr("fill", "#0284c7").style("font-size", "12px").style("font-weight", "bold").text(d => `${d.count} 岗`).style("opacity", 0).call(enter => enter.transition().duration(500).style("opacity", 1).attr("x", d => x(d.count) + 8)),
       update => update.text(d => `${d.count} 岗`).call(update => update.transition().duration(500).attr("y", d => y(d.name) + y.bandwidth() / 2).attr("x", d => x(d.count) + 8)),
       exit => exit.transition().duration(200).style("opacity", 0).remove()
     );
@@ -429,10 +373,9 @@ function drawSkillsChart() {
 let barSvg = null; 
 function drawBarChart(dataset) {
   const container = d3.select(barRef.value);
-  const containerWidth = container.node().getBoundingClientRect().width || 600;
-  const width = containerWidth; 
+  const width = container.node().getBoundingClientRect().width || 600; 
   const height = 800; 
-  const margin = { top: 20, right: 40, bottom: 30, left: 240 }; 
+  const margin = { top: 20, right: 40, bottom: 30, left: 140 }; 
 
   const salaryMap = d3.rollup(dataset,
     v => d3.mean(v, d => Number(String(d['Salary_USD'] || 0).replace(/[^0-9.-]+/g,""))),
@@ -444,12 +387,11 @@ function drawBarChart(dataset) {
 
   if (!barSvg) {
     container.selectAll("*").remove();
-    barSvg = container.append("svg").attr("width", "100%").attr("height", "100%").attr("viewBox", `0 0 ${width} ${height}`).attr("preserveAspectRatio", "xMidYMid meet");
+    barSvg = container.append("svg").attr("width", "100%").attr("height", "100%");
     barSvg.append("g").attr("class", "x-axis");
     barSvg.append("g").attr("class", "y-axis");
-  } else {
-    barSvg.attr("viewBox", `0 0 ${width} ${height}`);
   }
+  barSvg.attr("viewBox", `0 0 ${width} ${height}`);
 
   const x = d3.scaleLinear().domain([0, d3.max(barData, d => d.avgSalary) || 100000]).range([margin.left, width - margin.right]);
   const maxBarHeight = 55; 
@@ -475,7 +417,26 @@ function drawBarChart(dataset) {
     );
 
   barSvg.select(".x-axis").attr("transform", `translate(0,${margin.top + barData.length * (maxBarHeight + 20)})`).transition().duration(500).call(d3.axisBottom(x).ticks(5).tickFormat(d3.format("~s"))).selectAll("text").style("font-size", "12px");
-  barSvg.select(".y-axis").attr("transform", `translate(${margin.left},0)`).transition().duration(500).call(d3.axisLeft(y).tickSizeOuter(0)).selectAll("text").style("font-size", "14px").style("font-weight", "bold").style("fill", "#334155"); 
+  
+  barSvg.select(".y-axis")
+    .attr("transform", `translate(${margin.left},0)`)
+    .call(d3.axisLeft(y).tickSizeOuter(0))
+    .selectAll("text")
+    .style("font-size", "13px")
+    .style("font-weight", "bold")
+    .style("fill", "#334155")
+    .text(null) 
+    .each(function(d) {
+        const el = d3.select(this);
+        if (d.length > 15 && d.includes(' ')) {
+            const words = d.split(' ');
+            const mid = Math.ceil(words.length / 2);
+            el.append("tspan").attr("x", -10).attr("dy", "-0.3em").text(words.slice(0, mid).join(' '));
+            el.append("tspan").attr("x", -10).attr("dy", "1.2em").text(words.slice(mid).join(' '));
+        } else {
+            el.append("tspan").attr("x", -10).attr("dy", "0.35em").text(d);
+        }
+    });
 }
 
 // ==========================================
@@ -483,24 +444,28 @@ function drawBarChart(dataset) {
 // ==========================================
 function drawSankey() {
   const container = d3.select(sankeyRef.value);
+  container.selectAll("*").remove(); 
+
   const width = container.node().getBoundingClientRect().width || 1000;
   const height = 750; 
-  
-  container.selectAll("*").remove();
 
   let tooltip = d3.select("body").select(".custom-tooltip");
   if (tooltip.empty()) {
     tooltip = d3.select("body").append("div").attr("class", "custom-tooltip").style("opacity", 0);
   }
 
-  const svg = container.append("svg").attr("width", "100%").attr("height", "100%").attr("viewBox", `0 0 ${width} ${height}`).attr("preserveAspectRatio", "xMidYMid meet").attr("style", "font-family: sans-serif; cursor: grab;"); 
+  const svg = container.append("svg")
+    .attr("width", "100%")
+    .attr("height", "100%")
+    .attr("viewBox", `0 0 ${width} ${height}`)
+    .attr("style", "font-family: sans-serif; cursor: grab;"); 
   const mainGroup = svg.append("g");
   svg.call(d3.zoom().scaleExtent([0.5, 3]).on("zoom", (event) => mainGroup.attr("transform", event.transform))); 
 
   const sankeyGenerator = sankey().nodeId(d => d.id).nodeWidth(24).nodePadding(18).extent([[10, 10], [width - 10, height - 20]]);
 
   const jobCounts = d3.rollup(globalFilteredData, v => v.length, d => d.Job_Title || d[' Job_Title']); 
-  const topJobsSet = new Set(Array.from(jobCounts).sort((a, b) => b[1] - a[1]).slice(0, 15).map(d => d[0]));
+  const topJobsSet = new Set(Array.from(jobCounts).sort((a, b) => b[1] - a[1]).slice(0, 22).map(d => d[0]));
   
   const nodesMap = new Map();
   const linksMap = new Map();
@@ -533,7 +498,30 @@ function drawSankey() {
   if (graphData.nodes.length === 0) return;
 
   const { nodes, links } = sankeyGenerator(graphData);
+  const industryNodes = nodes.filter(n => n.category === 'Industry');
+  if (industryNodes.length > 0) {
+    // 1. 找出这堆节点中最上面的顶边 (minY) 和最下面的底边 (maxY)
+    const minY = d3.min(industryNodes, n => n.y0);
+    const maxY = d3.max(industryNodes, n => n.y1);
+    
+    // 2. 计算这堆节点的整体高度
+    const groupHeight = maxY - minY;
+    
+    // 3. 计算为了让这堆节点在画布 (height) 中居中，顶边应该在什么位置
+    const targetMinY = (height - groupHeight) / 2;
+    
+    // 4. 计算需要整体平移的距离 (向下平移为正数)
+    const offset = targetMinY - minY;
 
+    // 5. 将所有中间列的节点统一平移这个 offset
+    industryNodes.forEach(node => {
+      node.y0 += offset;
+      node.y1 += offset;
+    });
+
+    // 6. 通知 Sankey 引擎基于新坐标重新计算连线的贝塞尔曲线路径
+    sankeyGenerator.update(graphData);
+  }
   const linkPath = mainGroup.append("g").attr("fill", "none").attr("stroke-opacity", 0.3).selectAll("g").data(links).join("path").attr("class", "link").attr("d", sankeyLinkHorizontal()).attr("stroke", d => getNodeColor(d.source)).attr("stroke-width", d => Math.max(1, d.width));
     
   const nodeGroup = mainGroup.append("g").selectAll("g").data(nodes).join("g").attr("class", "node"); 
@@ -579,15 +567,15 @@ function drawSankey() {
     })
   .on("mousemove", function(event) { tooltip.style("left", (event.pageX + 15) + "px").style("top", (event.pageY - 15) + "px"); })
   .on("mouseleave", function() { tooltip.transition().duration(200).style("opacity", 0); });
+  
   nodeGroup.call(d3.drag()
       .subject(d => d)
       .on("start", function() { d3.select(this).raise(); svg.style("cursor", "grabbing"); })
       .on("drag", function(event, d) {
         const nodeHeight = d.y1 - d.y0; 
-        d.y0 += event.dy;
-      
-        if (d.y0 < 10) d.y0 = 10; // 顶部不准越过 10
-        else if (d.y0 + nodeHeight > height - 20) d.y0 = height - 20 - nodeHeight; // 底部严格限制
+        d.y0 += event.dy; 
+        if (d.y0 < 10) d.y0 = 10; 
+        else if (d.y0 + nodeHeight > height - 20) d.y0 = height - 20 - nodeHeight; 
         
         d.y1 = d.y0 + nodeHeight; 
         d3.select(this).select("rect").attr("y", d.y0);
@@ -601,11 +589,18 @@ function drawSankey() {
 </script>
 
 <style>
-html, body { margin: 0 !important; padding: 0 !important; width: 100% !important; background-color: #f8fafc !important; overflow-x: auto; }
-#app { max-width: 100% !important; padding: 0 !important; margin: 0 !important; width: 100% !important; display: block !important; }
+/* 强制网页全局防溢出 */
+html, body { margin: 0 !important; padding: 0 !important; width: 100% !important; background-color: #f8fafc !important; overflow-x: hidden; }
+#app { width: 100% !important; display: block !important; overflow-x: hidden; }
 
+/* 关键修复区：添加了 overflow-x: hidden 和严谨的 min-width 控制 */
 .dashboard {
-  max-width: 1600px; min-width: 1200px; margin: 0 auto; padding: 30px; box-sizing: border-box;
+  max-width: 1600px; 
+  width: 100%; 
+  margin: 0 auto; 
+  padding: 30px; 
+  box-sizing: border-box; 
+  overflow-x: hidden; 
 }
 
 .header-container { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
@@ -615,23 +610,23 @@ html, body { margin: 0 !important; padding: 0 !important; width: 100% !important
 .controls select { padding: 8px 16px; font-size: 15px; border-radius: 6px; border: 1px solid #cbd5e1; outline: none; cursor: pointer; }
 .subtitle { color: #475569; font-size: 15px; margin-bottom: 25px; }
 
+/* 必须添加 min-width: 0 以防弹性盒子在内容过多时被无限撑开 */
 .charts-layout {
-  display: flex; flex-wrap: nowrap; width: 100%; gap: 30px; height: 850px; 
+  display: flex; flex-wrap: nowrap; width: 100%; gap: 30px; height: 800px; min-width: 0;
 }
 .sankey-card { 
-  flex: 6.5; 
-  background: white; 
-  border-radius: 16px; 
-  box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); 
-  padding: 25px; 
-  position: relative; 
-  min-width: 0; 
-  display: flex; 
-  flex-direction: column; 
-  overflow: hidden;
+  flex: 6.5; background: white; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); 
+  padding: 25px; position: relative; display: flex; flex-direction: column; 
+  min-width: 0; min-height: 0; overflow: hidden; /* 防止内部溢出 */
 }
-.bar-chart-card { flex: 3.5; background: white; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); padding: 25px; display: flex; flex-direction: column; min-width: 0; }
-.sankey-container, .bar-container { width: 100%; height: 100%; }
+.bar-chart-card { 
+  flex: 3.5; background: white; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); 
+  padding: 25px; display: flex; flex-direction: column; 
+  min-width: 0; min-height: 0; overflow: hidden; 
+}
+.sankey-container, .bar-container { 
+  width: 100%; flex: 1; min-height: 0; position: relative; 
+}
 .bar-title { margin: 0 0 15px 0; font-size: 18px; color: #1e293b; text-align: center; border-bottom: 2px solid #f1f5f9; padding-bottom: 15px; }
 .node, .link { transition: stroke-opacity 0.2s ease, stroke 0.2s ease, opacity 0.2s ease; }
 .node:hover { cursor: grab; }
@@ -643,54 +638,20 @@ html, body { margin: 0 !important; padding: 0 !important; width: 100% !important
   border-radius: 10px; font-size: 14px; color: #0f172a; line-height: 1.6; z-index: 9999; backdrop-filter: blur(12px);
 }
 
-/* 经验与技能图谱样式 */
 .skills-insight-card {
-  margin-top: 30px;
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
-  padding: 25px 35px;
+  margin-top: 30px; background: white; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); padding: 25px 35px;
 }
-.section-title {
-  margin: 0 0 20px 0;
-  color: #0f172a;
-  font-size: 20px;
-  border-bottom: 2px solid #f1f5f9;
-  padding-bottom: 15px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.hint-text {
-  font-size: 14px;
-  color: #64748b;
-  font-weight: normal;
-}
-.skills-layout {
-  display: flex;
-  gap: 40px;
-  height: 400px;
-}
-.exp-card { flex: 4; display: flex; flex-direction: column; }
-.skills-card { flex: 6; display: flex; flex-direction: column; }
-.sub-chart-title {
-  margin: 0 0 10px 0;
-  font-size: 16px;
-  color: #334155;
-  text-align: center;
-}
-.exp-chart-container, .skills-chart-container {
-  flex: 1;
-  width: 100%;
-}
-.bar:hover {
-  filter: brightness(1.1);
-}
+.section-title { margin: 0 0 20px 0; color: #0f172a; font-size: 20px; border-bottom: 2px solid #f1f5f9; padding-bottom: 15px; display: flex; align-items: center; gap: 10px; }
+.hint-text { font-size: 14px; color: #64748b; font-weight: normal; }
 
-/* 注释面板样式 */
-.annotations-card { margin-top: 30px; background: white; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); padding: 25px 35px; display: flex; flex-direction: row; gap: 40px; }
-.annotation-section { flex: 1; }
-.annotation-section h4 { margin: 0 0 15px 0; color: #1e293b; font-size: 16px; display: flex; align-items: center; }
-.annotation-section ul { margin: 0; padding-left: 24px; list-style-type: disc; color: #475569; font-size: 14px; line-height: 1.8; text-align: left !important; }
-.annotation-section li { margin-bottom: 8px; text-align: left !important; }
+.skills-layout {
+  display: flex; gap: 40px; height: 400px; min-width: 0;
+}
+.exp-card { flex: 4; display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden;}
+.skills-card { flex: 6; display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden;}
+.sub-chart-title { margin: 0 0 10px 0; font-size: 16px; color: #334155; text-align: center; }
+.exp-chart-container, .skills-chart-container {
+  flex: 1; width: 100%; min-height: 0;
+}
+.bar:hover { filter: brightness(1.1); }
 </style>
