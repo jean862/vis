@@ -1,10 +1,11 @@
 <template>
   <div class="dashboard">
-    <div class="header-container">
-      <h2>AI 相关核心岗位全景图谱：替代风险、薪资分布与技能阶梯 (2025-2026)</h2>
-      <div class="controls">
-        <label for="company-filter">筛选公司规模：</label>
-        <select id="company-filter" v-model="selectedCompanySize" @change="updateDashboard">
+    <div class="header-container" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <h2 style="margin: 0; color: #0f172a; font-size: 26px;">2026 AI 人才市场全景洞察：替代风险、薪资溢价与能力模型</h2>
+      
+      <div class="controls" style="background: white; padding: 10px 20px; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+        <label for="company-filter" style="margin-right: 10px; color: #475569; font-size: 15px;">筛选公司规模：</label>
+        <select id="company-filter" v-model="selectedCompanySize" @change="updateDashboard" style="padding: 6px 12px; font-size: 14px; border-radius: 6px; border: 1px solid #cbd5e1; outline: none; cursor: pointer;">
           <option value="All">🌐 全部公司</option>
           <option value="Startup">🚀 初创公司 (Startup)</option>
           <option value="Enterprise">🏢 大型企业 (Enterprise)</option>
@@ -12,9 +13,17 @@
       </div>
     </div>
 
-    <p class="subtitle">
-      💡 <b>高级多视图交互：</b> 悬停左侧网络节点，可观察右侧<b>薪资榜</b>的实时联动；按住节点可拖拽排版；滚轮缩放画布
-    </p>
+    <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 30px; background: white; padding: 12px 24px; border-radius: 12px; box-shadow: 0 2px 10px -3px rgba(0,0,0,0.05); border: 1px solid #f1f5f9;">
+      
+      <span class="data-badge" style="background-color: #e0f2fe; color: #0369a1; padding: 6px 16px; border-radius: 20px; font-size: 14px; font-weight: 600; white-space: nowrap;">
+        当前符合条件的数据：<b style="font-size: 16px;">{{ currentDataCount }}</b> 条
+      </span>
+      
+      <span style="color: #475569; font-size: 15px;">
+        💡 <b>高级多视图交互：</b> 悬停左侧网络节点，可观察右侧<b>薪资榜</b>的实时联动；按住节点可拖拽排版；滚轮缩放画布
+      </span>
+      
+    </div>
     
     <div class="charts-layout">
       <div class="sankey-card">
@@ -70,6 +79,68 @@
         </div>
         
       </div>
+    </div>
+    <div class="project-documentation" style="margin-top: 40px; background: white; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); padding: 40px 50px; text-align: left; color: #334155; line-height: 1.8;">
+      
+      <h2 style="margin-top: 0; color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px;">📝 项目说明文档</h2>
+
+      <h3 style="color: #1e293b; margin-top: 30px;">1. 旨在解答什么问题？</h3>
+      <p>
+        在 AI 技术飞速发展的当下，技术从业者面临着巨大的职业焦虑与不确定性。本可视化方案旨在打破信息壁垒，为 2025-2026 年的 AI 领域求职者及行业分析师解答以下核心问题：
+      </p>
+      <ul style="padding-left: 20px;">
+        <li><b>风险与去向：</b> 哪些核心 AI 相关岗位面临较高的被 AI 取代的风险？这些岗位主要集中在哪些行业？</li>
+        <li><b>薪资水平：</b> 市场更愿意为哪些岗位支付高薪？高风险岗位是否伴随着高风险溢价？</li>
+        <li><b>能力进阶路径：</b> 不同经验层级（从初级到高管）的岗位分布如何？要实现职级跃升，从业者需要优先掌握哪些核心技能？</li>
+      </ul>
+
+      <h3 style="color: #1e293b; margin-top: 30px;">2. 设计决策的依据与替代方案</h3>
+      <p><b>① 可视化编码的选择：</b></p>
+      <ul style="padding-left: 20px;">
+        <li><b>桑基图 (Sankey Diagram)：</b> 用于呈现“岗位 -> 行业 -> 风险等级”的三维流向关系。相较于平行坐标图或多个独立的饼图，桑基图能以极强的视觉连贯性展现类目间的交叉与人才归属路径。因此选择桑基图。</li>
+        <li><b>条形图 (Bar Chart)：</b> 用于展示薪资 Top 5 和核心技能 Top 10。在设计初期考虑过使用<em>词云 (Word Cloud)</em> 来展示技能，但词云无法提供精确的量化对比。条形图结合长度与数值标签，能最大化数据读取的准确性。</li>
+        <li><b>颜色编码：</b> 风险等级采用了符合人类直觉的“红-黄-绿”编码，红色代表高风险，黄色代表中等风险，绿色代表低风险；在职位与行业的节点颜色选择上，不同节点分配不同颜色，同时通过自定义 D3 比例尺手动干预了易撞色的节点，以确保每一条流向路径清晰可辨。</li>
+      </ul>
+      <p><b>② 交互技术的选择与理论支撑：</b></p>
+      <p style="margin-bottom: 10px;">本项目构建了多维度的立体交互体系，其中上方的行业流向图与薪资图会联动，下方的经验与技能图会联动。交互方式如下：</p>
+      <ul style="padding-left: 20px;">
+        <li style="margin-bottom: 8px;"><b>全局过滤：</b> 
+          通过顶部的“公司规模”下拉菜单，用户可以瞬间切换上方两个的数据上下文。这种宏观过滤避免了将所有类别强行塞入单一视图导致的视觉过载，让用户能直观筛选想要了解的企业规模的对应数据。
+        </li>
+        <li style="margin-bottom: 8px;"><b>多视图联动与数据钻取：</b> 
+          对于行业流向图，当鼠标悬停于桑基图节点或连线时，会出现悬浮卡片显示相关数据信息及占比；悬停于节点时，右侧薪资榜单会实时截取该节点的局部数据并重绘条形图，显示对应的薪资信息。
+          对于下方的经验柱状图，当点击经验柱时，右侧的 Top 技能榜会动态过滤并重现，显示该经验等级对应的核心技能。这种多视图联动让用户在不丢失宏观全局感的前提下也能深度探索微观细节。
+        </li>
+        <li style="margin-bottom: 8px;"><b>直接操纵(节点拖拽)：</b> 
+          复杂网络图如桑基图的固有痛点是连线交叉带来的视觉混乱。为此我利用 D3 的 Drag 模块赋予了节点物理属性。用户可以按住节点在垂直方向上自由拖拽，从而可以定义自己喜欢的布局来追踪特定的职业流向。
+        </li>
+        <li style="margin-bottom: 8px;"><b>几何缩放与漫游：</b> 
+          考虑到 AI 职业节点数量庞大，单一视口难以兼顾宏观拓扑与微观标签。通过我的设计，用户可以通过鼠标滚轮进行无极缩放，并拖拽画布平移，确保在大数据量下依然保持优秀的局部可读性。
+        </li>
+      </ul>
+
+      <h3 style="color: #1e293b; margin-top: 30px;">3. 外部资源引用</h3>
+      <ul style="padding-left: 20px;">
+        <li style="margin-bottom: 8px;"><b>数据源：</b> 采用在 <a href="https://www.kaggle.com/datasets/waddahali/global-ai-job-market-and-agentic-surge-2025-2026" target="_blank" rel="noopener noreferrer" style="color: #0ea5e9; text-decoration: underline; font-weight: bold;">Kaggle (Global AI Job Market 2025-2026)</a> 下载的 <code>ai_job_market_2026.csv</code> 数据集，包含了 AI 行业的职位、薪水、行业、替代风险、技能和经验要求等维度。</li>
+        <li><b>技术栈与依赖：</b> 
+          <ul>
+            <li>核心框架：<b>Vue.js 3</b> (用于组件化开发与状态管理)</li>
+            <li>可视化库：<b>D3.js (v7)</b> (用于 DOM 绑定与 SVG 绘制) 以及 <b>d3-sankey</b> (用于布局桑基图网络)。</li>
+          </ul>
+        </li>
+      </ul>
+
+      <h3 style="color: #1e293b; margin-top: 30px;">4. 开发流程概述与反思</h3>
+      <p>
+        本项目共计耗时约20余工时。开发流程大致分为：数据清洗与降维、主视图构建（桑基图）、副视图构建及状态绑定、UI 样式与交互细节打磨四个阶段。
+      </p>
+      <p><b>耗时最多的环节：</b></p>
+      <ul style="padding-left: 20px;">
+        <li><b>一：图表功能设计，多视图之间的状态同步与计算逻辑。</b> 特别是在桑基图的 <code>mouseenter</code> 事件中，需要根据悬停的节点类型（职位、行业或风险），从原数据集中反向逆向筛选出包含该特征的局部子集，并实时驱动薪资条形图的 D3 重绘动画。处理高频触发事件下的过渡动画防抖与状态清理极具挑战性。</li>
+        <li><b>二：SVG 布局与边缘 Case 处理。</b> 例如处理桑基图节点的拖拽溢出边界问题、文本标签被切割问题，以及由于字符串格式不统一（如技能字段以逗号分隔）导致的数据拆解和重新聚合汇总。</li>
+        <li style="margin-bottom: 8px;"><b>三：UI 视觉呈现与交互细节打磨。</b> 为了提升质感与页面美观程度，我在视觉编码上花费了大量精力。例如自定义 D3 色彩比例尺以优化视觉效果，强行干预特定岗位节点以防撞色；同时反复调试 CSS 弹性盒模型与容器边距，图表位置，彻底解决了图表高度挤压溢出、节点拖拽越界以及跨分辨率排版错位等纯前端难题，确保了最终页面的美观与严谨度。</li>
+      </ul>
+
     </div>
   </div>
 </template>
