@@ -1,33 +1,39 @@
 <template>
   <div class="dashboard">
-    <div class="header-container" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-      <h2 style="margin: 0; color: #0f172a; font-size: 26px;">2026 AI 人才市场全景洞察：替代风险、薪资溢价与能力模型</h2>
+    <div class="header-container" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; text-align: left !important;">
       
-      <div class="controls" style="background: white; padding: 10px 20px; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
-        <label for="company-filter" style="margin-right: 10px; color: #475569; font-size: 15px;">筛选公司规模：</label>
-        <select id="company-filter" v-model="selectedCompanySize" @change="updateDashboard" style="padding: 6px 12px; font-size: 14px; border-radius: 6px; border: 1px solid #cbd5e1; outline: none; cursor: pointer;">
-          <option value="All">🌐 全部公司</option>
-          <option value="Startup">🚀 初创公司 (Startup)</option>
-          <option value="Enterprise">🏢 大型企业 (Enterprise)</option>
-        </select>
+      <div style="flex: 1; padding-right: 30px;">
+        <h2 style="margin: 0; color: #0f172a; font-size: 26px; line-height: 1.4; text-align: left !important;">2026 AI 人才市场全景洞察：替代风险、薪资溢价与能力模型</h2>
+      </div>
+      
+      <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 10px;">
+        
+        <div class="controls" style="background: white; padding: 10px 20px; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+          <label for="company-filter" style="margin-right: 10px; color: #475569; font-size: 15px;">筛选公司规模：</label>
+          <select id="company-filter" v-model="selectedCompanySize" @change="updateDashboard" style="padding: 6px 12px; font-size: 14px; border-radius: 6px; border: 1px solid #cbd5e1; outline: none; cursor: pointer;">
+            <option value="All">🌐 全部公司</option>
+            <option value="Startup">🚀 初创公司 (Startup)</option>
+            <option value="Enterprise">🏢 大型企业 (Enterprise)</option>
+          </select>
+        </div>
+        
+        <span class="data-badge" style="display: inline-block; background-color: #e0f2fe; color: #0369a1; padding: 4px 14px; border-radius: 20px; font-size: 13px; font-weight: 600;">
+          当前大盘有效数据：<b style="font-size: 15px;">{{ currentDataCount }}</b> 条
+        </span>
+        
       </div>
     </div>
 
-    <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 30px; background: white; padding: 12px 24px; border-radius: 12px; box-shadow: 0 2px 10px -3px rgba(0,0,0,0.05); border: 1px solid #f1f5f9;">
-      
-      <span class="data-badge" style="background-color: #e0f2fe; color: #0369a1; padding: 6px 16px; border-radius: 20px; font-size: 14px; font-weight: 600; white-space: nowrap;">
-        当前符合条件的数据：<b style="font-size: 16px;">{{ currentDataCount }}</b> 条
+    <div style="margin-bottom: 20px; color: #475569; font-size: 14px; display: flex; align-items: center; text-align: left !important;">
+      <span style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 4px 10px; border-radius: 6px; margin-right: 10px; font-weight: bold; color: #1e293b;">
+        💡 流向与薪资视图交互：
       </span>
-      
-      <span style="color: #475569; font-size: 15px;">
-        💡 <b>高级多视图交互：</b> 悬停左侧网络节点，可观察右侧<b>薪资榜</b>的实时联动；按住节点可拖拽排版；滚轮缩放画布
-      </span>
-      
+      <span>悬停下方左侧网络节点，可观察右侧 <b>薪资榜</b> 的实时联动；按住节点可垂直拖拽排版；滚轮缩放画布</span>
     </div>
     
     <div class="charts-layout">
       <div class="sankey-card">
-        <h3 class="bar-title">岗位行业流向与AI替代风险评估</h3>
+        <h3 class="bar-title">岗位行业流向与AI替代风险评估图</h3>
         <div ref="sankeyRef" class="sankey-container"></div>
       </div>
       
@@ -39,7 +45,7 @@
 
     <div class="skills-insight-card">
       <h3 class="section-title">
-        🛠️ 经验与核心技能图谱 <span class="hint-text">(交互方法：点击左侧经验柱，查看右侧经验对应技能需求)</span>
+        经验与核心技能图谱 <span class="hint-text">(交互方法：点击左侧经验柱，查看右侧经验对应技能需求)</span>
       </h3>
       <div class="skills-layout">
         <div class="exp-card">
@@ -58,11 +64,15 @@
       <div style="font-size: 18px; font-weight: bold; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; text-align: left !important;">
         📌 注：
       </div>
+
+      <div style="color: #475569; font-size: 14px; background-color: #f8fafc; padding: 12px 16px; border-left: 4px solid #cbd5e1; border-radius: 0 6px 6px 0; margin-top: -5px; text-align: left !important;">
+         <b>数据统计说明：</b> 筛选器中的「初创公司」与「大型企业」仅为典型两极样本，不包含中型企业及未披露规模的样本，故两者之和小于全部大盘。
+      </div>
       
       <div style="display: flex; flex-direction: row; gap: 40px; width: 100%; margin-top: 5px;">
         
         <div style="flex: 1;">
-          <h4 style="margin: 0 0 15px 0; color: #1e293b; font-size: 16px; text-align: left !important;">📊 左侧第一张图（流向图）节点含义：</h4>
+          <h4 style="margin: 0 0 15px 0; color: #1e293b; font-size: 16px; text-align: left !important;"> 左侧第一张图（流向图）节点含义：</h4>
           <ul style="margin: 0; padding-left: 24px; list-style-type: disc; color: #475569; font-size: 14px; line-height: 1.8; text-align: left !important;">
             <li style="margin-bottom: 8px;"><b>左侧列：AI 核心职位</b> —— 当前市场上活跃的各类 AI 相关岗位。</li>
             <li style="margin-bottom: 8px;"><b>中间列：所属行业分布</b> —— 大量雇佣上述岗位的产业领域。</li>
@@ -71,7 +81,7 @@
         </div>
         
         <div style="flex: 1;">
-          <h4 style="margin: 0 0 15px 0; color: #1e293b; font-size: 16px; text-align: left !important;">📊 右侧与下方图表交互方法：</h4>
+          <h4 style="margin: 0 0 15px 0; color: #1e293b; font-size: 16px; text-align: left !important;"> 右侧与下方图表交互方法：</h4>
           <ul style="margin: 0; padding-left: 24px; list-style-type: disc; color: #475569; font-size: 14px; line-height: 1.8; text-align: left !important;">
             <li style="margin-bottom: 8px;"><b>右侧薪资图表：</b> 鼠标悬停左边第一张图的任意节点或连线上，右侧薪资榜单会显示节点对应数据。</li>
             <li style="margin-bottom: 8px;"><b>下方经验与技能联动图：</b> 点击左下方经验柱，右侧的核心技能榜单会显示该阶段的核心技能。</li>
@@ -105,10 +115,10 @@
       <p style="margin-bottom: 10px;">本项目构建了多维度的立体交互体系，其中上方的行业流向图与薪资图会联动，下方的经验与技能图会联动。交互方式如下：</p>
       <ul style="padding-left: 20px;">
         <li style="margin-bottom: 8px;"><b>全局过滤：</b> 
-          通过顶部的“公司规模”下拉菜单，用户可以瞬间切换上方两个的数据上下文。这种宏观过滤避免了将所有类别强行塞入单一视图导致的视觉过载，让用户能直观筛选想要了解的企业规模的对应数据。
+          对于上方的流向图和薪资图，通过顶部的“公司规模”下拉菜单，用户可以瞬间切换所有图表的数据上下文。这种宏观过滤避免了将所有类别强行塞入单一视图导致的视觉过载，让用户能直观筛选想要了解的企业规模的对应数据。切换公司规模同时页面上方的统计信息会同时更新。
         </li>
         <li style="margin-bottom: 8px;"><b>多视图联动与数据钻取：</b> 
-          对于行业流向图，当鼠标悬停于桑基图节点或连线时，会出现悬浮卡片显示相关数据信息及占比；悬停于节点时，右侧薪资榜单会实时截取该节点的局部数据并重绘条形图，显示对应的薪资信息。
+          对于行业流向图，当鼠标悬停于桑基图节点或连线时，会出现悬浮卡片显示相关数据信息及占比；悬停于节点时，右侧薪资榜单会实时截取该节点的局部数据并重绘条形图，显示对应的薪资信息；悬停于连线时，则会高亮该流向路径，同时显示统计数据。
           对于下方的经验柱状图，当点击经验柱时，右侧的 Top 技能榜会动态过滤并重现，显示该经验等级对应的核心技能。这种多视图联动让用户在不丢失宏观全局感的前提下也能深度探索微观细节。
         </li>
         <li style="margin-bottom: 8px;"><b>直接操纵(节点拖拽)：</b> 
@@ -132,19 +142,18 @@
 
       <h3 style="color: #1e293b; margin-top: 30px;">4. 开发流程概述与反思</h3>
       <p>
-        本项目共计耗时约20余工时。开发流程大致分为：数据清洗与降维、主视图构建（桑基图）、副视图构建及状态绑定、UI 样式与交互细节打磨四个阶段。
+        本项目共计耗时约20余工时。开发流程大致分为：数据清洗与降维、主视图构建（桑基图）、多视图构建及状态绑定、UI 样式与交互细节打磨四个阶段。
       </p>
       <p><b>耗时最多的环节：</b></p>
       <ul style="padding-left: 20px;">
         <li><b>一：图表功能设计，多视图之间的状态同步与计算逻辑。</b> 特别是在桑基图的 <code>mouseenter</code> 事件中，需要根据悬停的节点类型（职位、行业或风险），从原数据集中反向逆向筛选出包含该特征的局部子集，并实时驱动薪资条形图的 D3 重绘动画。处理高频触发事件下的过渡动画防抖与状态清理极具挑战性。</li>
         <li><b>二：SVG 布局与边缘 Case 处理。</b> 例如处理桑基图节点的拖拽溢出边界问题、文本标签被切割问题，以及由于字符串格式不统一（如技能字段以逗号分隔）导致的数据拆解和重新聚合汇总。</li>
-        <li style="margin-bottom: 8px;"><b>三：UI 视觉呈现与交互细节打磨。</b> 为了提升质感与页面美观程度，我在视觉编码上花费了大量精力。例如自定义 D3 色彩比例尺以优化视觉效果，强行干预特定岗位节点以防撞色；同时反复调试 CSS 弹性盒模型与容器边距，图表位置，彻底解决了图表高度挤压溢出、节点拖拽越界以及跨分辨率排版错位等纯前端难题，确保了最终页面的美观与严谨度。</li>
+        <li style="margin-bottom: 8px;"><b>三：UI 视觉呈现与交互细节打磨。</b> 为了提升质感与页面美观程度，我在视觉编码上花费了大量精力。例如自定义 D3 色彩比例尺以优化视觉效果，强行干预特定岗位节点以防撞色；同时反复调试 CSS 弹性盒模型与容器边距、图表位置、各元素位置，彻底解决了图表高度挤压溢出、节点拖拽越界以及跨分辨率排版错位和排版混乱等问题，确保了最终页面的美观与严谨度。</li>
       </ul>
 
     </div>
   </div>
 </template>
-
 <script setup>
 import { ref, onMounted } from 'vue';
 import * as d3 from 'd3';
@@ -199,7 +208,7 @@ function getNodeColor(d) {
   return getJobColor(d.name);
 }
 
-// 🌟 辅助函数：安全提取字段
+// 
 function getExpLevel(row) {
   let val = row['Experience'] || row['Experience_Level'] || row['Experience Level'];
   return val ? String(val).trim() : 'Unknown';
@@ -240,13 +249,12 @@ function updateDashboard() {
   barChartTitle.value = "大盘全局平均薪资 Top 5";
   drawBarChart(globalFilteredData);
   
-  // 🌟 绘制新的两张表
   drawExperienceChart();
   drawSkillsChart();
 }
 
 // ==========================================
-// 🌟 绘制下方左侧图：经验分布柱状图 (可点击)
+// 绘制下方左侧图：经验分布柱状图 (可点击)
 // ==========================================
 let expSvg = null;
 function drawExperienceChart() {
@@ -256,7 +264,7 @@ function drawExperienceChart() {
   const margin = { top: 20, right: 30, bottom: 40, left: 100 };
 
   // 统计经验层级
-  // ✅ 将上面这段完全替换为按“业务职级”排序的代码：
+  // 将上面这段完全替换为按“业务职级”排序的代码：
   const expCounts = d3.rollup(globalFilteredData, v => v.length, getExpLevel);
   
   // 定义经验等级的严格从高到低排序字典
@@ -292,7 +300,7 @@ function drawExperienceChart() {
         .attr("rx", 4)
         .style("cursor", "pointer")
         .attr("opacity", d => selectedExp === null || selectedExp === d.name ? 1 : 0.3)
-        // 🌟 点击联动逻辑
+        // 点击联动逻辑
         .on("click", function(event, d) {
           selectedExp = selectedExp === d.name ? null : d.name; // Toggle 点击
           skillsChartTitle.value = selectedExp ? `【${selectedExp}】阶段 Top 10 技能` : "大盘全局 Top 10 核心技能";
@@ -326,7 +334,7 @@ function drawExperienceChart() {
 }
 
 // ==========================================
-// 🌟 绘制下方右侧图：核心技能排行 (接收联动)
+// 绘制下方右侧图：核心技能排行 (接收联动)
 // ==========================================
 let skillsSvg = null;
 function drawSkillsChart() {
@@ -393,7 +401,7 @@ function drawSkillsChart() {
 
 
 // ==========================================
-// 绘制右侧副视图 (联动薪资柱状图) - 保持原样
+// 绘制右侧副视图 (联动薪资柱状图)
 // ==========================================
 let barSvg = null; 
 function drawBarChart(dataset) {
@@ -448,7 +456,7 @@ function drawBarChart(dataset) {
 }
 
 // ==========================================
-// 绘制左侧主视图 (Sankey图) - 保持原样
+// 绘制左侧主视图 (Sankey图)
 // ==========================================
 function drawSankey() {
   const container = d3.select(sankeyRef.value);
@@ -554,8 +562,7 @@ function drawSankey() {
       .on("drag", function(event, d) {
         const nodeHeight = d.y1 - d.y0; 
         d.y0 += event.dy;
-        
-        // 🌟 核心修复：更严格的上下边界限制
+      
         if (d.y0 < 10) d.y0 = 10; // 顶部不准越过 10
         else if (d.y0 + nodeHeight > height - 20) d.y0 = height - 20 - nodeHeight; // 底部严格限制
         
@@ -571,7 +578,6 @@ function drawSankey() {
 </script>
 
 <style>
-/* ... (原有的基础样式不变) ... */
 html, body { margin: 0 !important; padding: 0 !important; width: 100% !important; background-color: #f8fafc !important; overflow-x: auto; }
 #app { max-width: 100% !important; padding: 0 !important; margin: 0 !important; width: 100% !important; display: block !important; }
 
@@ -599,7 +605,7 @@ html, body { margin: 0 !important; padding: 0 !important; width: 100% !important
   min-width: 0; 
   display: flex; 
   flex-direction: column; 
-  overflow: hidden; /* 🌟 新增：强制把跑出白色卡片的任何东西“咔嚓”剪掉 */
+  overflow: hidden;
 }
 .bar-chart-card { flex: 3.5; background: white; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); padding: 25px; display: flex; flex-direction: column; min-width: 0; }
 .sankey-container, .bar-container { width: 100%; height: 100%; }
@@ -614,7 +620,7 @@ html, body { margin: 0 !important; padding: 0 !important; width: 100% !important
   border-radius: 10px; font-size: 14px; color: #0f172a; line-height: 1.6; z-index: 9999; backdrop-filter: blur(12px);
 }
 
-/* 🌟 新增：经验与技能图谱样式 */
+/* 经验与技能图谱样式 */
 .skills-insight-card {
   margin-top: 30px;
   background: white;
